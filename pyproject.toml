@@ -1,0 +1,14 @@
+[build-system]
+requires = ["poetry_core"]
+build-backend = "poetry.core.masonry.api"
+
+[project]
+name = "pyascend"
+version = "0.0.1"
+authors = [
+  {name = "Vladimir Ivanov", email = "ivvl82@gmail.com"},
+]
+description = "Python interface for running MLIR kernels on Ascend NPU."
+
+[tool.poetry]
+packages = [{include = "pyascend", from = "src"}]
