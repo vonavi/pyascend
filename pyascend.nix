@@ -2,7 +2,9 @@
   buildPythonPackage,
 
   # Native build inputs
-  poetry-core
+  poetry-core,
+  pybind11,
+  setuptools
 }:
 
 buildPythonPackage {
@@ -12,7 +14,11 @@ buildPythonPackage {
 
   src = ./.;
 
-  nativeBuildInputs = [ poetry-core ];
+  nativeBuildInputs = [
+    poetry-core
+    pybind11
+    setuptools
+  ];
 
   pythonImportsCheck = [ "pyascend" ];
 }

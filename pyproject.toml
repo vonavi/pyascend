@@ -1,5 +1,5 @@
 [build-system]
-requires = ["poetry_core"]
+requires = ["poetry_core", "pybind11", "setuptools"]
 build-backend = "poetry.core.masonry.api"
 
 [project]
@@ -12,3 +12,7 @@ description = "Python interface for running MLIR kernels on Ascend NPU."
 
 [tool.poetry]
 packages = [{include = "pyascend", from = "src"}]
+include = [{path = "launcher/*.so", format = "wheel"}]
+
+[tool.poetry.build]
+script = "build_ext.py"
