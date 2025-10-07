@@ -1,6 +1,6 @@
 [build-system]
-requires = ["poetry_core", "pybind11", "setuptools"]
-build-backend = "poetry.core.masonry.api"
+requires = ["pybind11", "scikit-build-core"]
+build-backend = "scikit_build_core.build"
 
 [project]
 name = "pyascend"
@@ -10,9 +10,6 @@ authors = [
 ]
 description = "Python interface for running MLIR kernels on Ascend NPU."
 
-[tool.poetry]
-packages = [{include = "pyascend", from = "src"}]
-include = [{path = "launcher/*.so", format = "wheel"}]
-
-[tool.poetry.build]
-script = "build_ext.py"
+[tool.scikit-build]
+cmake.build-type = "Release"
+wheel.packages = ["src/pyascend"]

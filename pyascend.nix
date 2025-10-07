@@ -2,9 +2,10 @@
   buildPythonPackage,
 
   # Native build inputs
-  poetry-core,
+  cmake,
+  ninja,
   pybind11,
-  setuptools
+  scikit-build-core
 }:
 
 buildPythonPackage {
@@ -15,10 +16,13 @@ buildPythonPackage {
   src = ./.;
 
   nativeBuildInputs = [
-    poetry-core
+    cmake
+    ninja
     pybind11
-    setuptools
+    scikit-build-core
   ];
+
+  dontUseCmakeConfigure = true;
 
   pythonImportsCheck = [ "pyascend" ];
 }
