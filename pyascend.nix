@@ -1,4 +1,5 @@
 {
+  ascendcDevkitPath,
   buildPythonPackage,
 
   # Native build inputs
@@ -23,6 +24,10 @@ buildPythonPackage {
   ];
 
   dontUseCmakeConfigure = true;
+
+  CMAKE_ARGS = [
+    "-DASCENDC_DEVKIT_PATH=${ascendcDevkitPath}"
+  ];
 
   pythonImportsCheck = [ "pyascend" ];
 }
