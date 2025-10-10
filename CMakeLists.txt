@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.15)
 project(pyascend LANGUAGES CXX)
 
+option(ENABLE_TESTS "Build tests" ON)
+if(ENABLE_TESTS)
+  add_subdirectory(tests)
+endif()
+
 find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
 find_package(pybind11 CONFIG REQUIRED)
 
