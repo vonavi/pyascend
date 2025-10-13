@@ -12,6 +12,7 @@
       python = pkgs.python3;
       pyascend = python.pkgs.callPackage ./pyascend.nix {
         inherit ascendcDevkitPath;
+        enableTests = true;
       };
     in {
       defaultPackage = python.withPackages (_: [ pyascend ]);
