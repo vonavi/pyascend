@@ -10,6 +10,12 @@ authors = [
 ]
 description = "Python interface for running MLIR kernels on Ascend NPU."
 
+[project.optional-dependencies]
+test = ["numpy", "pytest"]
+
 [tool.scikit-build]
 cmake.build-type = "Release"
 wheel.packages = ["src/pyascend"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
