@@ -7,5 +7,6 @@ pybind11_add_module(_ascend
 )
 target_compile_features(_ascend PRIVATE cxx_std_17)
 target_include_directories(_ascend PRIVATE "${CMAKE_SOURCE_DIR}/include")
+target_link_libraries(_ascend PRIVATE stdc++)
 
 install(TARGETS _ascend DESTINATION ${PROJECT_NAME})

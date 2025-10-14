@@ -5,6 +5,7 @@
   python,
 
   # Native build inputs
+  autoPatchelfHook,
   cmake,
   ninja,
   pybind11,
@@ -26,6 +27,7 @@ buildPythonPackage rec {
   src = ./.;
 
   nativeBuildInputs = [
+    autoPatchelfHook
     cmake
     ninja
     pybind11
@@ -44,7 +46,9 @@ buildPythonPackage rec {
     (lib.cmakeBool "ENABLE_TESTS" enableTests)
   ];
 
-  pythonImportsCheck = [ "pyascend" ];
+  preFixup = ''
+    addAutoPatchelfSearchPath "${ascendcDevkitPath}/lib64"
+  '';
 
   postInstall = lib.optionalString enableTests ''
     cp -r tests "$out/${python.sitePackages}/${pname}"
