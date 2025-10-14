@@ -3,6 +3,7 @@
 
 #include <string>
 
-std::string kernel_launch(const std::string &);
+void kernelLaunch(const std::string &kernel, const std::string &objPath,
+                  const std::string &dataDir);
 
 #endif // ASCEND_HPP

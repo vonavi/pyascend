@@ -6,7 +6,17 @@ pybind11_add_module(_ascend
   bindings.cpp
 )
 target_compile_features(_ascend PRIVATE cxx_std_17)
-target_include_directories(_ascend PRIVATE "${CMAKE_SOURCE_DIR}/include")
-target_link_libraries(_ascend PRIVATE stdc++)
+target_include_directories(_ascend PRIVATE
+  "${ASCENDC_DEVKIT_PATH}/include"
+  "${ASCENDC_DEVKIT_PATH}/include/experiment/msprof"
+  "${ASCENDC_DEVKIT_PATH}/include/experiment/runtime"
+  "${CMAKE_SOURCE_DIR}/include"
+)
+target_link_directories(_ascend PRIVATE
+  "${ASCENDC_DEVKIT_PATH}/lib64"
+)
+target_link_libraries(_ascend PRIVATE
+  stdc++ ascendcl runtime
+)
 
 install(TARGETS _ascend DESTINATION ${PROJECT_NAME})
