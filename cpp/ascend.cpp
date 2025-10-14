@@ -8,31 +8,6 @@
 #include "acl/acl_rt.h"
 #include "runtime/kernel.h"
 
-constexpr size_t MAX_BIN_LENGTH = 0x1000000;
-using float16_t = int16_t;
-
-// ---- Error checking helpers ----
-
-#define CHECK_ACL(x)                                                           \
-  do {                                                                         \
-    aclError __ret = x;                                                        \
-    if (ACL_ERROR_NONE != __ret) {                                             \
-      std::ostringstream oss;                                                  \
-      oss << __FILE__ << ":" << __LINE__ << " aclError:" << __ret;             \
-      throw std::runtime_error(oss.str());                                     \
-    }                                                                          \
-  } while (0)
-
-#define CHECK_RT(x)                                                            \
-  do {                                                                         \
-    rtError_t __ret = x;                                                       \
-    if (RT_ERROR_NONE != __ret) {                                              \
-      std::ostringstream oss;                                                  \
-      oss << __FILE__ << ":" << __LINE__ << " rtError:" << __ret;              \
-      throw std::runtime_error(oss.str());                                     \
-    }                                                                          \
-  } while (0)
-
 // ---- File utilities ----
 
 void readFile(const std::string &filepath, char *data, size_t &length) {
