@@ -8,3 +8,9 @@ target_include_directories(aiv_obj PRIVATE
   "${ASCENDC_DEVKIT_PATH}/ascendc/include/basic_api/interface"
   "${ASCENDC_DEVKIT_PATH}/ascendc/include/highlevel_api"
 )
+
+install(FILES
+  $<TARGET_OBJECTS:aiv_obj>
+  DESTINATION ${PROJECT_NAME}/tests
+  RENAME add_custom.o
+)
