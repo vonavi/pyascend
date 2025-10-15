@@ -10,28 +10,31 @@ PYBIND11_MODULE(_ascend, m) {
 
   ascendInitialize();
 
+  py::class_<GMem>(m, "GMem").def(py::init([](const py::buffer &buffer) {
+    py::buffer_info info = buffer.request();
+    if (info.format[0] != py::dtype("float16").char_())
+      throw py::type_error("Input must have dtype float16");
+    if (info.ndim != 1)
+      throw py::value_error("Input must be 1-D vector");
+
+    size_t nbytes = info.shape[0] * info.itemsize;
+    return new GMem(info.ptr, nbytes);
+  }));
+
   m.def(
       "kernel_launch",
-      [](const std::string &kernel, const py::array &inputX,
-         const py::array &inputY, const std::string &objPath) {
-        auto dtype = py::dtype("float16");
-
-        if (!inputX.dtype().is(dtype) || !inputY.dtype().is(dtype))
-          throw py::type_error("Inputs must have dtype float16");
-        if (inputX.ndim() != 1 || inputY.ndim() != 1)
-          throw py::value_error("Inputs must be 1-D vectors");
-        if (inputX.size() != inputY.size())
+      [](const std::string &kernel, const GMem &gmX, const GMem &gmY,
+         const std::string &objPath) {
+        if (gmX.nbytes() != gmY.nbytes())
           throw py::value_error("Input vectors must have the same length");
 
-        size_t byteLen = inputX.nbytes();
-        GMem gmX(inputX.data(), byteLen);
-        GMem gmY(inputY.data(), byteLen);
-
+        size_t byteLen = gmX.nbytes();
         std::vector<std::byte> vectorZ(byteLen);
         kernelLaunch(kernel, gmX, gmY, vectorZ, objPath);
 
-        return py::array(dtype, {inputX.size()}, {dtype.itemsize()},
-                         vectorZ.data());
+        auto dtype = py::dtype("float16");
+        size_t size = byteLen / dtype.itemsize();
+        return py::array(dtype, {size}, {dtype.itemsize()}, vectorZ.data());
       },
       py::arg("kernel"), py::arg("x"), py::arg("y"), py::pos_only(),
       py::arg("objpath"), "Launch a kernel on Ascend NPU.");
