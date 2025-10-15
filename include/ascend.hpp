@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+#include "acl/acl_rt.h"
+
 typedef int16_t float16_t;
 
 #define MAX_BIN_LENGTH 0x1000000
@@ -31,13 +33,33 @@ typedef int16_t float16_t;
     }                                                                          \
   } while (0)
 
+// ---- GMem class ----
+
+class GMem {
+public:
+  GMem(const void *data, size_t nbytes) : m_nbytes(nbytes) {
+    copyFrom(data, nbytes);
+  }
+  ~GMem() {
+    if (m_data)
+      aclrtFree(m_data);
+  }
+
+  void *data() const { return m_data; }
+  size_t nbytes() const { return m_nbytes; }
+
+  void copyFrom(const void *data, size_t nbytes);
+
+private:
+  void *m_data = nullptr;
+  size_t m_nbytes = 0;
+};
+
 // ---- Main functions ----
 
 void ascendInitialize();
 
-void kernelLaunch(const std::string &kernel,
-                  const std::vector<std::byte> &vectorX,
-                  const std::vector<std::byte> &vectorY,
+void kernelLaunch(const std::string &kernel, const GMem &gmX, const GMem &gmY,
                   std::vector<std::byte> &vectorZ, const std::string &objPath);
 
 #endif // ASCEND_HPP
