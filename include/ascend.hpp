@@ -33,6 +33,8 @@ typedef int16_t float16_t;
 
 // ---- Main functions ----
 
+void ascendInitialize();
+
 void kernelLaunch(const std::string &kernel,
                   const std::vector<std::byte> &vectorX,
                   const std::vector<std::byte> &vectorY,
