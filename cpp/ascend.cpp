@@ -1,5 +1,6 @@
 #include "ascend.hpp"
 
+#include <cstring> // std::memcpy
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
@@ -22,34 +23,23 @@ void readFile(const std::string &filepath, char *data, size_t &length) {
     throw std::runtime_error("Failed to read " + filepath);
 }
 
-void writeFile(const std::string &filepath, char *data, size_t length) {
-  std::ofstream ofs(filepath, std::ios::binary);
-  if (!ofs)
-    throw std::runtime_error("Failed to open " + filepath);
-  if (!ofs.write(data, length))
-    throw std::runtime_error("Failed to write " + filepath);
-}
-
 // ---- Main functions ----
 
-void kernelLaunch(const std::string &kernel, const std::string &objPath,
-                  const std::string &dataDir) {
-  constexpr unsigned dataSize = 256;
-  const size_t byteLenX = dataSize * sizeof(float16_t);
-  const size_t byteLenY = dataSize * sizeof(float16_t);
-  const size_t byteLenZ = dataSize * sizeof(float16_t);
-
+void kernelLaunch(const std::string &kernel,
+                  const std::vector<std::byte> &vectorX,
+                  const std::vector<std::byte> &vectorY,
+                  std::vector<std::byte> &vectorZ, const std::string &objPath) {
   CHECK_ACL(aclInit(nullptr));
   const int deviceId = 0;
   CHECK_ACL(aclrtSetDevice(deviceId));
 
   char *binData = new char[MAX_BIN_LENGTH];
-  size_t byteLen;
-  readFile(objPath, binData, byteLen);
+  size_t binLen;
+  readFile(objPath, binData, binLen);
   rtDevBinary_t binary{.magic = RT_DEV_BINARY_MAGIC_ELF_AIVEC,
                        .version = 0,
                        .data = binData,
-                       .length = byteLen};
+                       .length = binLen};
 
   void *binHandle = nullptr;
   CHECK_RT(rtDevBinaryRegister(&binary, &binHandle));
@@ -61,11 +51,9 @@ void kernelLaunch(const std::string &kernel, const std::string &objPath,
 
   // --- Input X ---
   void *hostX = nullptr;
+  size_t byteLenX = vectorX.size();
   CHECK_ACL(aclrtMallocHost(&hostX, byteLenX));
-  readFile(dataDir + "/input_x.bin", reinterpret_cast<char *>(hostX), byteLen);
-  if (byteLen != byteLenX)
-    throw std::runtime_error("Unexpected input X length " +
-                             std::to_string(byteLen));
+  std::memcpy(hostX, vectorX.data(), byteLenX);
 
   void *deviceX = nullptr;
   CHECK_ACL(aclrtMalloc(&deviceX, byteLenX, ACL_MEM_MALLOC_HUGE_FIRST));
@@ -75,11 +63,9 @@ void kernelLaunch(const std::string &kernel, const std::string &objPath,
 
   // --- Input Y ---
   void *hostY = nullptr;
+  size_t byteLenY = vectorY.size();
   CHECK_ACL(aclrtMallocHost(&hostY, byteLenY));
-  readFile(dataDir + "/input_y.bin", reinterpret_cast<char *>(hostY), byteLen);
-  if (byteLen != byteLenY)
-    throw std::runtime_error("Unexpected input Y length " +
-                             std::to_string(byteLen));
+  std::memcpy(hostY, vectorY.data(), byteLenY);
 
   void *deviceY = nullptr;
   CHECK_ACL(aclrtMalloc(&deviceY, byteLenY, ACL_MEM_MALLOC_HUGE_FIRST));
@@ -89,8 +75,10 @@ void kernelLaunch(const std::string &kernel, const std::string &objPath,
 
   // --- Output Z ---
   void *deviceZ = nullptr;
+  size_t byteLenZ = vectorZ.size();
   CHECK_ACL(aclrtMalloc(&deviceZ, byteLenZ, ACL_MEM_MALLOC_HUGE_FIRST));
 
+  size_t dataSize = byteLenZ / sizeof(float16_t);
   struct Args {
     void *inX;
     void *inY;
@@ -105,8 +93,7 @@ void kernelLaunch(const std::string &kernel, const std::string &objPath,
   CHECK_ACL(aclrtMallocHost(&hostZ, byteLenZ));
   CHECK_ACL(aclrtMemcpy(hostZ, byteLenZ, deviceZ, byteLenZ,
                         ACL_MEMCPY_DEVICE_TO_HOST));
-  writeFile(dataDir + "/output_z.bin", reinterpret_cast<char *>(hostZ),
-            byteLenZ);
+  std::memcpy(vectorZ.data(), hostZ, byteLenZ);
 
   CHECK_ACL(aclrtFree(deviceX));
   CHECK_ACL(aclrtFree(deviceY));
