@@ -23,6 +23,19 @@ void readFile(const std::string &filepath, char *data, size_t &length) {
     throw std::runtime_error("Failed to read " + filepath);
 }
 
+// ---- GMem class ----
+
+void GMem::copyFrom(const void *data, size_t nbytes) {
+  void *host = nullptr;
+  CHECK_ACL(aclrtMallocHost(&host, nbytes));
+  std::memcpy(host, data, nbytes);
+
+  CHECK_ACL(aclrtMalloc(&m_data, nbytes, ACL_MEM_MALLOC_HUGE_FIRST));
+  CHECK_ACL(
+      aclrtMemcpy(m_data, nbytes, host, nbytes, ACL_MEMCPY_HOST_TO_DEVICE));
+  CHECK_ACL(aclrtFreeHost(host));
+}
+
 // ---- Main functions ----
 
 void ascendInitialize() {
@@ -31,9 +44,7 @@ void ascendInitialize() {
   CHECK_ACL(aclrtSetDevice(deviceId));
 }
 
-void kernelLaunch(const std::string &kernel,
-                  const std::vector<std::byte> &vectorX,
-                  const std::vector<std::byte> &vectorY,
+void kernelLaunch(const std::string &kernel, const GMem &gmX, const GMem &gmY,
                   std::vector<std::byte> &vectorZ, const std::string &objPath) {
   char *binData = new char[MAX_BIN_LENGTH];
   size_t binLen;
@@ -51,31 +62,6 @@ void kernelLaunch(const std::string &kernel,
   rtStream_t stream;
   CHECK_RT(rtStreamCreate(&stream, 0));
 
-  // --- Input X ---
-  void *hostX = nullptr;
-  size_t byteLenX = vectorX.size();
-  CHECK_ACL(aclrtMallocHost(&hostX, byteLenX));
-  std::memcpy(hostX, vectorX.data(), byteLenX);
-
-  void *deviceX = nullptr;
-  CHECK_ACL(aclrtMalloc(&deviceX, byteLenX, ACL_MEM_MALLOC_HUGE_FIRST));
-  CHECK_ACL(aclrtMemcpy(deviceX, byteLenX, hostX, byteLenX,
-                        ACL_MEMCPY_HOST_TO_DEVICE));
-  CHECK_ACL(aclrtFreeHost(hostX));
-
-  // --- Input Y ---
-  void *hostY = nullptr;
-  size_t byteLenY = vectorY.size();
-  CHECK_ACL(aclrtMallocHost(&hostY, byteLenY));
-  std::memcpy(hostY, vectorY.data(), byteLenY);
-
-  void *deviceY = nullptr;
-  CHECK_ACL(aclrtMalloc(&deviceY, byteLenY, ACL_MEM_MALLOC_HUGE_FIRST));
-  CHECK_ACL(aclrtMemcpy(deviceY, byteLenY, hostY, byteLenY,
-                        ACL_MEMCPY_HOST_TO_DEVICE));
-  CHECK_ACL(aclrtFreeHost(hostY));
-
-  // --- Output Z ---
   void *deviceZ = nullptr;
   size_t byteLenZ = vectorZ.size();
   CHECK_ACL(aclrtMalloc(&deviceZ, byteLenZ, ACL_MEM_MALLOC_HUGE_FIRST));
@@ -86,7 +72,7 @@ void kernelLaunch(const std::string &kernel,
     void *inY;
     void *outZ;
     size_t size;
-  } args{deviceX, deviceY, deviceZ, dataSize};
+  } args{gmX.data(), gmY.data(), deviceZ, dataSize};
   CHECK_RT(rtKernelLaunch(kernel.c_str(), /*blockDim=*/1, &args, sizeof(args),
                           nullptr, stream));
   CHECK_RT(rtStreamSynchronize(stream));
@@ -97,8 +83,6 @@ void kernelLaunch(const std::string &kernel,
                         ACL_MEMCPY_DEVICE_TO_HOST));
   std::memcpy(vectorZ.data(), hostZ, byteLenZ);
 
-  CHECK_ACL(aclrtFree(deviceX));
-  CHECK_ACL(aclrtFree(deviceY));
   CHECK_ACL(aclrtFree(deviceZ));
   CHECK_ACL(aclrtFreeHost(hostZ));
 

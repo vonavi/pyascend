@@ -2,7 +2,6 @@
 #include <pybind11/pybind11.h>
 
 #include "ascend.hpp"
-#include <cstring> // std::memcpy
 
 namespace py = pybind11;
 
@@ -25,13 +24,11 @@ PYBIND11_MODULE(_ascend, m) {
           throw py::value_error("Input vectors must have the same length");
 
         size_t byteLen = inputX.nbytes();
-        std::vector<std::byte> vectorX(byteLen);
-        std::vector<std::byte> vectorY(byteLen);
-        std::vector<std::byte> vectorZ(byteLen);
+        GMem gmX(inputX.data(), byteLen);
+        GMem gmY(inputY.data(), byteLen);
 
-        std::memcpy(vectorX.data(), inputX.data(), byteLen);
-        std::memcpy(vectorY.data(), inputY.data(), byteLen);
-        kernelLaunch(kernel, vectorX, vectorY, vectorZ, objPath);
+        std::vector<std::byte> vectorZ(byteLen);
+        kernelLaunch(kernel, gmX, gmY, vectorZ, objPath);
 
         return py::array(dtype, {inputX.size()}, {dtype.itemsize()},
                          vectorZ.data());
