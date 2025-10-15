@@ -25,14 +25,16 @@ void readFile(const std::string &filepath, char *data, size_t &length) {
 
 // ---- Main functions ----
 
+void ascendInitialize() {
+  CHECK_ACL(aclInit(nullptr));
+  const int deviceId = 0;
+  CHECK_ACL(aclrtSetDevice(deviceId));
+}
+
 void kernelLaunch(const std::string &kernel,
                   const std::vector<std::byte> &vectorX,
                   const std::vector<std::byte> &vectorY,
                   std::vector<std::byte> &vectorZ, const std::string &objPath) {
-  CHECK_ACL(aclInit(nullptr));
-  const int deviceId = 0;
-  CHECK_ACL(aclrtSetDevice(deviceId));
-
   char *binData = new char[MAX_BIN_LENGTH];
   size_t binLen;
   readFile(objPath, binData, binLen);
@@ -103,6 +105,4 @@ void kernelLaunch(const std::string &kernel,
   CHECK_RT(rtStreamDestroy(stream));
   CHECK_RT(rtDevBinaryUnRegister(binHandle));
   delete[] binData;
-  CHECK_ACL(aclrtResetDevice(deviceId));
-  CHECK_ACL(aclFinalize());
 }

@@ -9,6 +9,8 @@ namespace py = pybind11;
 PYBIND11_MODULE(_ascend, m) {
   m.doc() = "Pybind11-powered runtime for launching kernels on Ascend NPU.";
 
+  ascendInitialize();
+
   m.def(
       "kernel_launch",
       [](const std::string &kernel, const py::array &inputX,
