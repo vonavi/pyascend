@@ -1,7 +1,9 @@
 #ifndef ASCEND_HPP
 #define ASCEND_HPP
 
+#include <cstddef> // std::byte
 #include <string>
+#include <vector>
 
 typedef int16_t float16_t;
 
@@ -31,7 +33,9 @@ typedef int16_t float16_t;
 
 // ---- Main functions ----
 
-void kernelLaunch(const std::string &kernel, const std::string &objPath,
-                  const std::string &dataDir);
+void kernelLaunch(const std::string &kernel,
+                  const std::vector<std::byte> &vectorX,
+                  const std::vector<std::byte> &vectorY,
+                  std::vector<std::byte> &vectorZ, const std::string &objPath);
 
 #endif // ASCEND_HPP
