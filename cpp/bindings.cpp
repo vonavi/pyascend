@@ -65,9 +65,9 @@ PYBIND11_MODULE(_ascend, m) {
         std::byte *args_begin = reinterpret_cast<std::byte *>(&args);
         std::vector<std::byte> argBytes(args_begin, args_begin + sizeof(args));
 
-        kernelLaunch(kernel, argBytes, (kernelsDir / "add_custom.o").string());
+        kernelLaunch(kernel, argBytes, (kernelsDir / "add_kernel.o").string());
         return gmZ;
       },
       py::arg("kernel"), py::arg("x"), py::arg("y"),
-      "Launch the 'add_custom' kernel on Ascend NPU.");
+      "Launch the 'add' kernel on Ascend NPU.");
 }

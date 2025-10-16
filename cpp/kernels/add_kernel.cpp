@@ -5,9 +5,9 @@ using namespace AscendC;
 constexpr uint32_t TILE_NUM = 4;
 constexpr uint32_t BUFFER_NUM = 2;
 
-class KernelAddCustom {
+class AddKernel {
 public:
-  __aicore__ inline KernelAddCustom() {}
+  __aicore__ inline AddKernel() {}
 
   __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, GM_ADDR z,
                               uint32_t totalLength) {
@@ -74,9 +74,9 @@ private:
   uint32_t tileLength;
 };
 
-extern "C" __global__ __aicore__ void
-add_custom(GM_ADDR x, GM_ADDR y, GM_ADDR z, uint32_t totalLength) {
-  KernelAddCustom op;
+extern "C" __global__ __aicore__ void add(GM_ADDR x, GM_ADDR y, GM_ADDR z,
+                                          uint32_t totalLength) {
+  AddKernel op;
   op.Init(x, y, z, totalLength);
   op.Process();
 }
