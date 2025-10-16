@@ -50,7 +50,8 @@ public:
   }
 
   void *data() const { return m_data; }
-  size_t nbytes() const { return m_size * m_itemsize; }
+  size_t size() const { return m_size; }
+  size_t itemsize() const { return m_itemsize; }
 
   void alloc(size_t nbytes);
   void copyFrom(const void *data, size_t nbytes);

@@ -20,19 +20,17 @@ PYBIND11_MODULE(_ascend, m) {
         return new GMem(info.ptr, info.shape[0], info.itemsize);
       }))
       .def_buffer([](const GMem &gm) {
-        char *data = new char[gm.nbytes()];
+        std::string format(1, py::dtype("float16").char_());
+        char *data = new char[gm.size() * gm.itemsize()];
         gm.copyTo(data);
 
-        py::dtype dtype = py::dtype("float16");
-        size_t size = gm.nbytes() / dtype.itemsize();
-        std::string format(1, dtype.char_());
         return py::buffer_info(
-            data,              /* Pointer to buffer */
-            dtype.itemsize(),  /* Size of one scalar */
-            format,            /* Python struct-style format descriptor */
-            1,                 /* Number of dimensions */
-            {size},            /* Buffer dimensions */
-            {dtype.itemsize()} /* Strides (in bytes) for each index */
+            data,           /* Pointer to buffer */
+            gm.itemsize(),  /* Size of one scalar */
+            format,         /* Python struct-style format descriptor */
+            1,              /* Number of dimensions */
+            {gm.size()},    /* Buffer dimensions */
+            {gm.itemsize()} /* Strides (in bytes) for each index */
         );
       });
 
@@ -40,12 +38,13 @@ PYBIND11_MODULE(_ascend, m) {
       "kernel_launch",
       [](const std::string &kernel, const GMem &gmX, const GMem &gmY,
          const std::string &objPath) {
-        if (gmX.nbytes() != gmY.nbytes())
-          throw py::value_error("Input vectors must have the same length");
+        if (gmX.itemsize() != gmY.itemsize())
+          throw py::type_error("Inputs must have the same item size");
+        if (gmX.size() != gmY.size())
+          throw py::value_error("Inputs must have the same size");
 
-        size_t itemsize = py::dtype("float16").itemsize();
-        size_t size = gmX.nbytes() / itemsize;
-        GMem gmZ(size, itemsize);
+        size_t size = gmX.size();
+        GMem gmZ(size, gmX.itemsize());
 
         struct __attribute__((packed)) Args {
           void *inX __attribute__((aligned(8)));
