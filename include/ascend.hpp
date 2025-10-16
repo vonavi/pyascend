@@ -8,10 +8,6 @@
 
 #include "acl/acl_rt.h"
 
-typedef int16_t float16_t;
-
-#define MAX_BIN_LENGTH 0x1000000
-
 // ---- Error checking helpers ----
 
 #define CHECK_ACL(x)                                                           \
@@ -69,7 +65,7 @@ private:
 void ascendInitialize();
 
 void kernelLaunch(const std::string &kernel, std::vector<std::byte> &argBytes,
-                  const std::string &objPath);
+                  const std::filesystem::path &objectPath);
 
 GMem addKernelLaunch(const GMem &gmX, const GMem &gmY,
                      const std::filesystem::path &kernelsDir);
