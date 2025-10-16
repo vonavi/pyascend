@@ -25,6 +25,10 @@ void readFile(const std::string &filepath, char *data, size_t &length) {
 
 // ---- GMem class ----
 
+void GMem::alloc(size_t nbytes) {
+  CHECK_ACL(aclrtMalloc(&m_data, nbytes, ACL_MEM_MALLOC_HUGE_FIRST));
+}
+
 void GMem::copyFrom(const void *data, size_t nbytes) {
   void *host = nullptr;
   CHECK_ACL(aclrtMallocHost(&host, nbytes));
@@ -62,9 +66,8 @@ void kernelLaunch(const std::string &kernel, const GMem &gmX, const GMem &gmY,
   rtStream_t stream;
   CHECK_RT(rtStreamCreate(&stream, 0));
 
-  void *deviceZ = nullptr;
   size_t byteLenZ = vectorZ.size();
-  CHECK_ACL(aclrtMalloc(&deviceZ, byteLenZ, ACL_MEM_MALLOC_HUGE_FIRST));
+  GMem gmZ(byteLenZ);
 
   size_t dataSize = byteLenZ / sizeof(float16_t);
   struct Args {
@@ -72,18 +75,16 @@ void kernelLaunch(const std::string &kernel, const GMem &gmX, const GMem &gmY,
     void *inY;
     void *outZ;
     size_t size;
-  } args{gmX.data(), gmY.data(), deviceZ, dataSize};
+  } args{gmX.data(), gmY.data(), gmZ.data(), dataSize};
   CHECK_RT(rtKernelLaunch(kernel.c_str(), /*blockDim=*/1, &args, sizeof(args),
                           nullptr, stream));
   CHECK_RT(rtStreamSynchronize(stream));
 
   void *hostZ = nullptr;
   CHECK_ACL(aclrtMallocHost(&hostZ, byteLenZ));
-  CHECK_ACL(aclrtMemcpy(hostZ, byteLenZ, deviceZ, byteLenZ,
+  CHECK_ACL(aclrtMemcpy(hostZ, byteLenZ, gmZ.data(), byteLenZ,
                         ACL_MEMCPY_DEVICE_TO_HOST));
   std::memcpy(vectorZ.data(), hostZ, byteLenZ);
-
-  CHECK_ACL(aclrtFree(deviceZ));
   CHECK_ACL(aclrtFreeHost(hostZ));
 
   CHECK_RT(rtStreamDestroy(stream));
