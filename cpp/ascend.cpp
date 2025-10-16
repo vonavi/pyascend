@@ -9,6 +9,8 @@
 #include "acl/acl_rt.h"
 #include "runtime/kernel.h"
 
+namespace fs = std::filesystem;
+
 // ---- File utilities ----
 
 void readFile(const std::string &filepath, char *data, size_t &length) {
@@ -82,4 +84,28 @@ void kernelLaunch(const std::string &kernel, std::vector<std::byte> &argBytes,
   CHECK_RT(rtStreamDestroy(stream));
   CHECK_RT(rtDevBinaryUnRegister(binHandle));
   delete[] binData;
+}
+
+GMem addKernelLaunch(const GMem &gmX, const GMem &gmY,
+                     const fs::path &kernelsDir) {
+  if (gmX.itemsize() != gmY.itemsize())
+    throw std::invalid_argument("Inputs must have the same item size");
+  if (gmX.size() != gmY.size())
+    throw std::invalid_argument("Inputs must have the same size");
+
+  struct __attribute__((packed)) Args {
+    void *inX __attribute__((aligned(8)));
+    void *inY __attribute__((aligned(8)));
+    void *outZ __attribute__((aligned(8)));
+    size_t size __attribute__((aligned(4)));
+  };
+
+  size_t size = gmX.size();
+  GMem gmZ(size, gmX.itemsize());
+  Args args{gmX.data(), gmY.data(), gmZ.data(), size};
+  std::byte *args_begin = reinterpret_cast<std::byte *>(&args);
+  std::vector<std::byte> argBytes(args_begin, args_begin + sizeof(args));
+
+  kernelLaunch("add", argBytes, (kernelsDir / "add_kernel.o").string());
+  return gmZ;
 }
