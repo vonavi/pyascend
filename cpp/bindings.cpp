@@ -2,11 +2,19 @@
 #include <pybind11/pybind11.h>
 
 #include "ascend.hpp"
+#include <dlfcn.h>
+#include <filesystem>
 
 namespace py = pybind11;
+namespace fs = std::filesystem;
 
 PYBIND11_MODULE(_ascend, m) {
   m.doc() = "Pybind11-powered runtime for launching kernels on Ascend NPU.";
+
+  Dl_info dlInfo;
+  dladdr((void *)&PyInit__ascend, &dlInfo);
+  fs::path moduleDir = fs::path(dlInfo.dli_fname).parent_path();
+  fs::path kernelsDir = fs::canonical(moduleDir / "kernels");
 
   ascendInitialize();
 
@@ -37,8 +45,8 @@ PYBIND11_MODULE(_ascend, m) {
 
   m.def(
       "kernel_launch",
-      [](const std::string &kernel, const GMem &gmX, const GMem &gmY,
-         const std::string &objPath) {
+      [kernelsDir](const std::string &kernel, const GMem &gmX,
+                   const GMem &gmY) {
         if (gmX.itemsize() != gmY.itemsize())
           throw py::type_error("Inputs must have the same item size");
         if (gmX.size() != gmY.size())
@@ -57,9 +65,9 @@ PYBIND11_MODULE(_ascend, m) {
         std::byte *args_begin = reinterpret_cast<std::byte *>(&args);
         std::vector<std::byte> argBytes(args_begin, args_begin + sizeof(args));
 
-        kernelLaunch(kernel, argBytes, objPath);
+        kernelLaunch(kernel, argBytes, (kernelsDir / "add_custom.o").string());
         return gmZ;
       },
-      py::arg("kernel"), py::arg("x"), py::arg("y"), py::pos_only(),
-      py::arg("objpath"), "Launch a kernel on Ascend NPU.");
+      py::arg("kernel"), py::arg("x"), py::arg("y"),
+      "Launch the 'add_custom' kernel on Ascend NPU.");
 }

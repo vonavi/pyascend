@@ -11,6 +11,6 @@ target_include_directories(aiv_obj PRIVATE
 
 install(FILES
   $<TARGET_OBJECTS:aiv_obj>
-  DESTINATION ${PROJECT_NAME}/tests
+  DESTINATION ${PROJECT_NAME}/kernels
   RENAME add_custom.o
 )
