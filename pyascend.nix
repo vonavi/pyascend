@@ -43,7 +43,6 @@ buildPythonPackage rec {
 
   CMAKE_ARGS = [
     "-DASCENDC_DEVKIT_PATH=${ascendcDevkitPath}"
-    (lib.cmakeBool "ENABLE_TESTS" enableTests)
   ];
 
   preFixup = ''
