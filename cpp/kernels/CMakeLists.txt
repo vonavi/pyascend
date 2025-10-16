@@ -1,4 +1,4 @@
-add_library(aiv_obj OBJECT add_custom.cpp)
+add_library(aiv_obj OBJECT add_kernel.cpp)
 target_compile_options(aiv_obj PRIVATE
   -x cce --cce-aicore-only --cce-aicore-arch=dav-c220-vec
 )
@@ -12,5 +12,5 @@ target_include_directories(aiv_obj PRIVATE
 install(FILES
   $<TARGET_OBJECTS:aiv_obj>
   DESTINATION ${PROJECT_NAME}/kernels
-  RENAME add_custom.o
+  RENAME add_kernel.o
 )
