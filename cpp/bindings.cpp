@@ -47,7 +47,19 @@ PYBIND11_MODULE(_ascend, m) {
 
         size_t nbytes = gmX.nbytes();
         GMem gmZ(nbytes);
-        kernelLaunch(kernel, gmX, gmY, gmZ, objPath);
+
+        struct __attribute__((packed)) Args {
+          void *inX __attribute__((aligned(8)));
+          void *inY __attribute__((aligned(8)));
+          void *outZ __attribute__((aligned(8)));
+          size_t size __attribute__((aligned(4)));
+        };
+        size_t size = nbytes / py::dtype("float16").itemsize();
+        Args args{gmX.data(), gmY.data(), gmZ.data(), size};
+        std::byte *args_begin = reinterpret_cast<std::byte *>(&args);
+        std::vector<std::byte> argBytes(args_begin, args_begin + sizeof(args));
+
+        kernelLaunch(kernel, argBytes, objPath);
         return gmZ;
       },
       py::arg("kernel"), py::arg("x"), py::arg("y"), py::pos_only(),
