@@ -30,6 +30,17 @@ std::vector<char> readFile(const fs::path &filepath) {
 
 // ---- GMem class ----
 
+GMem::GMem(size_t size, size_t itemsize) : m_size(size), m_itemsize(itemsize) {
+  alloc(size * itemsize);
+}
+
+GMem::GMem(const void *data, size_t size, size_t itemsize)
+    : m_size(size), m_itemsize(itemsize) {
+  copyFrom(data, size * itemsize);
+}
+
+GMem::~GMem() { aclrtFree(m_data); }
+
 void GMem::alloc(size_t nbytes) {
   CHECK_ACL(aclrtMalloc(&m_data, nbytes, ACL_MEM_MALLOC_HUGE_FIRST));
 }
