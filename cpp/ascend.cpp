@@ -59,7 +59,7 @@ void ascendInitialize() {
 }
 
 void kernelLaunch(const std::string &kernel, const GMem &gmX, const GMem &gmY,
-                  std::vector<std::byte> &vectorZ, const std::string &objPath) {
+                  const GMem &gmZ, const std::string &objPath) {
   char *binData = new char[MAX_BIN_LENGTH];
   size_t binLen;
   readFile(objPath, binData, binLen);
@@ -76,10 +76,7 @@ void kernelLaunch(const std::string &kernel, const GMem &gmX, const GMem &gmY,
   rtStream_t stream;
   CHECK_RT(rtStreamCreate(&stream, 0));
 
-  size_t byteLenZ = vectorZ.size();
-  GMem gmZ(byteLenZ);
-
-  size_t dataSize = byteLenZ / sizeof(float16_t);
+  size_t dataSize = gmZ.nbytes() / sizeof(float16_t);
   struct Args {
     void *inX;
     void *inY;
@@ -89,7 +86,6 @@ void kernelLaunch(const std::string &kernel, const GMem &gmX, const GMem &gmY,
   CHECK_RT(rtKernelLaunch(kernel.c_str(), /*blockDim=*/1, &args, sizeof(args),
                           nullptr, stream));
   CHECK_RT(rtStreamSynchronize(stream));
-  gmZ.copyTo(vectorZ.data());
 
   CHECK_RT(rtStreamDestroy(stream));
   CHECK_RT(rtDevBinaryUnRegister(binHandle));
