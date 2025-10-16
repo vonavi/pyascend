@@ -28,13 +28,15 @@ PYBIND11_MODULE(_ascend, m) {
         if (gmX.nbytes() != gmY.nbytes())
           throw py::value_error("Input vectors must have the same length");
 
-        size_t byteLen = gmX.nbytes();
-        std::vector<std::byte> vectorZ(byteLen);
-        kernelLaunch(kernel, gmX, gmY, vectorZ, objPath);
+        size_t nbytes = gmX.nbytes();
+        GMem gmZ(nbytes);
+        kernelLaunch(kernel, gmX, gmY, gmZ, objPath);
+        void *outDataZ = new char[nbytes];
+        gmZ.copyTo(outDataZ);
 
-        auto dtype = py::dtype("float16");
-        size_t size = byteLen / dtype.itemsize();
-        return py::array(dtype, {size}, {dtype.itemsize()}, vectorZ.data());
+        py::dtype dtype = py::dtype("float16");
+        size_t size = nbytes / dtype.itemsize();
+        return py::array(dtype, {size}, {dtype.itemsize()}, outDataZ);
       },
       py::arg("kernel"), py::arg("x"), py::arg("y"), py::pos_only(),
       py::arg("objpath"), "Launch a kernel on Ascend NPU.");
