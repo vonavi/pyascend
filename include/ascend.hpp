@@ -55,7 +55,7 @@ public:
 
   void alloc(size_t nbytes);
   void copyFrom(const void *data, size_t nbytes);
-  void copyTo(void *data) const;
+  void copyTo(void *data, size_t nbytes) const;
 
 private:
   void *m_data = nullptr;

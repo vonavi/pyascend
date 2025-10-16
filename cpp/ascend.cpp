@@ -40,9 +40,8 @@ void GMem::copyFrom(const void *data, size_t nbytes) {
   CHECK_ACL(aclrtFreeHost(host));
 }
 
-void GMem::copyTo(void *data) const {
+void GMem::copyTo(void *data, size_t nbytes) const {
   void *host = nullptr;
-  size_t nbytes = m_size * m_itemsize;
   CHECK_ACL(aclrtMallocHost(&host, nbytes));
   CHECK_ACL(
       aclrtMemcpy(host, nbytes, m_data, nbytes, ACL_MEMCPY_DEVICE_TO_HOST));
