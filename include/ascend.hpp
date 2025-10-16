@@ -1,7 +1,6 @@
 #ifndef ASCEND_HPP
 #define ASCEND_HPP
 
-#include <cstddef> // std::byte
 #include <filesystem>
 #include <string>
 #include <vector>
@@ -64,7 +63,7 @@ private:
 
 void ascendInitialize();
 
-void kernelLaunch(const std::string &kernel, std::vector<std::byte> &argBytes,
+void kernelLaunch(const std::string &kernel, std::vector<char> &argBytes,
                   const std::filesystem::path &objectPath);
 
 GMem addKernelLaunch(const GMem &gmX, const GMem &gmY,
