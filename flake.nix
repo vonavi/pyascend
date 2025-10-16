@@ -20,7 +20,6 @@
       devShell = pkgs.mkShell {
         buildInputs = with pkgs; [
           clang-tools
-          poetry
           ruff
         ];
         inputsFrom = [ pyascend ];
