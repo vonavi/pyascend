@@ -40,6 +40,16 @@ void GMem::copyFrom(const void *data, size_t nbytes) {
   CHECK_ACL(aclrtFreeHost(host));
 }
 
+void GMem::copyTo(void *data) const {
+  void *host = nullptr;
+  CHECK_ACL(aclrtMallocHost(&host, m_nbytes));
+  CHECK_ACL(
+      aclrtMemcpy(host, m_nbytes, m_data, m_nbytes, ACL_MEMCPY_DEVICE_TO_HOST));
+
+  std::memcpy(data, host, m_nbytes);
+  CHECK_ACL(aclrtFreeHost(host));
+}
+
 // ---- Main functions ----
 
 void ascendInitialize() {
@@ -79,13 +89,7 @@ void kernelLaunch(const std::string &kernel, const GMem &gmX, const GMem &gmY,
   CHECK_RT(rtKernelLaunch(kernel.c_str(), /*blockDim=*/1, &args, sizeof(args),
                           nullptr, stream));
   CHECK_RT(rtStreamSynchronize(stream));
-
-  void *hostZ = nullptr;
-  CHECK_ACL(aclrtMallocHost(&hostZ, byteLenZ));
-  CHECK_ACL(aclrtMemcpy(hostZ, byteLenZ, gmZ.data(), byteLenZ,
-                        ACL_MEMCPY_DEVICE_TO_HOST));
-  std::memcpy(vectorZ.data(), hostZ, byteLenZ);
-  CHECK_ACL(aclrtFreeHost(hostZ));
+  gmZ.copyTo(vectorZ.data());
 
   CHECK_RT(rtStreamDestroy(stream));
   CHECK_RT(rtDevBinaryUnRegister(binHandle));
