@@ -13,16 +13,19 @@ namespace fs = std::filesystem;
 
 // ---- File utilities ----
 
-void readFile(const std::string &filepath, char *data, size_t &length) {
+std::vector<char> readFile(const fs::path &filepath) {
   std::ifstream ifs(filepath, std::ios::binary | std::ios::ate);
   if (!ifs)
-    throw std::runtime_error("Failed to open " + filepath);
+    throw std::runtime_error("Failed to open file: " + filepath.string());
 
-  length = ifs.tellg();
+  std::streamsize size = ifs.tellg();
+  std::vector<char> buffer(size);
+
   ifs.seekg(0, std::ios::beg);
+  if (!ifs.read(buffer.data(), size))
+    throw std::runtime_error("Failed to read file: " + filepath.string());
 
-  if (!ifs.read(data, length))
-    throw std::runtime_error("Failed to read " + filepath);
+  return buffer;
 }
 
 // ---- GMem class ----
@@ -61,18 +64,16 @@ void ascendInitialize() {
 }
 
 void kernelLaunch(const std::string &kernel, std::vector<std::byte> &argBytes,
-                  const std::string &objPath) {
-  char *binData = new char[MAX_BIN_LENGTH];
-  size_t binLen;
-  readFile(objPath, binData, binLen);
+                  const fs::path &objectPath) {
+  const std::vector<char> &binaryBuf = readFile(objectPath);
   rtDevBinary_t binary{.magic = RT_DEV_BINARY_MAGIC_ELF_AIVEC,
                        .version = 0,
-                       .data = binData,
-                       .length = binLen};
+                       .data = binaryBuf.data(),
+                       .length = binaryBuf.size()};
 
-  void *binHandle = nullptr;
-  CHECK_RT(rtDevBinaryRegister(&binary, &binHandle));
-  CHECK_RT(rtFunctionRegister(binHandle, kernel.c_str(), kernel.c_str(),
+  void *binaryHandle = nullptr;
+  CHECK_RT(rtDevBinaryRegister(&binary, &binaryHandle));
+  CHECK_RT(rtFunctionRegister(binaryHandle, kernel.c_str(), kernel.c_str(),
                               kernel.c_str(), FUNC_MODE_NORMAL));
 
   rtStream_t stream;
@@ -82,8 +83,7 @@ void kernelLaunch(const std::string &kernel, std::vector<std::byte> &argBytes,
   CHECK_RT(rtStreamSynchronize(stream));
 
   CHECK_RT(rtStreamDestroy(stream));
-  CHECK_RT(rtDevBinaryUnRegister(binHandle));
-  delete[] binData;
+  CHECK_RT(rtDevBinaryUnRegister(binaryHandle));
 }
 
 GMem addKernelLaunch(const GMem &gmX, const GMem &gmY,
@@ -106,6 +106,6 @@ GMem addKernelLaunch(const GMem &gmX, const GMem &gmY,
   std::byte *args_begin = reinterpret_cast<std::byte *>(&args);
   std::vector<std::byte> argBytes(args_begin, args_begin + sizeof(args));
 
-  kernelLaunch("add", argBytes, (kernelsDir / "add_kernel.o").string());
+  kernelLaunch("add", argBytes, kernelsDir / "add_kernel.o");
   return gmZ;
 }
