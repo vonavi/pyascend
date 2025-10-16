@@ -41,33 +41,32 @@ PYBIND11_MODULE(_ascend, m) {
             {gm.size()},    /* Buffer dimensions */
             {gm.itemsize()} /* Strides (in bytes) for each index */
         );
-      });
+      })
+      .def(
+          "__add__",
+          [kernelsDir](const GMem &gmX, const GMem &gmY) {
+            if (gmX.itemsize() != gmY.itemsize())
+              throw py::type_error("Inputs must have the same item size");
+            if (gmX.size() != gmY.size())
+              throw py::value_error("Inputs must have the same size");
 
-  m.def(
-      "kernel_launch",
-      [kernelsDir](const std::string &kernel, const GMem &gmX,
-                   const GMem &gmY) {
-        if (gmX.itemsize() != gmY.itemsize())
-          throw py::type_error("Inputs must have the same item size");
-        if (gmX.size() != gmY.size())
-          throw py::value_error("Inputs must have the same size");
+            size_t size = gmX.size();
+            GMem gmZ(size, gmX.itemsize());
 
-        size_t size = gmX.size();
-        GMem gmZ(size, gmX.itemsize());
+            struct __attribute__((packed)) Args {
+              void *inX __attribute__((aligned(8)));
+              void *inY __attribute__((aligned(8)));
+              void *outZ __attribute__((aligned(8)));
+              size_t size __attribute__((aligned(4)));
+            };
+            Args args{gmX.data(), gmY.data(), gmZ.data(), size};
+            std::byte *args_begin = reinterpret_cast<std::byte *>(&args);
+            std::vector<std::byte> argBytes(args_begin,
+                                            args_begin + sizeof(args));
 
-        struct __attribute__((packed)) Args {
-          void *inX __attribute__((aligned(8)));
-          void *inY __attribute__((aligned(8)));
-          void *outZ __attribute__((aligned(8)));
-          size_t size __attribute__((aligned(4)));
-        };
-        Args args{gmX.data(), gmY.data(), gmZ.data(), size};
-        std::byte *args_begin = reinterpret_cast<std::byte *>(&args);
-        std::vector<std::byte> argBytes(args_begin, args_begin + sizeof(args));
-
-        kernelLaunch(kernel, argBytes, (kernelsDir / "add_kernel.o").string());
-        return gmZ;
-      },
-      py::arg("kernel"), py::arg("x"), py::arg("y"),
-      "Launch the 'add' kernel on Ascend NPU.");
+            kernelLaunch("add", argBytes,
+                         (kernelsDir / "add_kernel.o").string());
+            return gmZ;
+          },
+          py::is_operator());
 }
