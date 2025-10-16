@@ -63,7 +63,7 @@ void ascendInitialize() {
   CHECK_ACL(aclrtSetDevice(deviceId));
 }
 
-void kernelLaunch(const std::string &kernel, std::vector<std::byte> &argBytes,
+void kernelLaunch(const std::string &kernel, std::vector<char> &argBytes,
                   const fs::path &objectPath) {
   const std::vector<char> &binaryBuf = readFile(objectPath);
   rtDevBinary_t binary{.magic = RT_DEV_BINARY_MAGIC_ELF_AIVEC,
@@ -103,8 +103,8 @@ GMem addKernelLaunch(const GMem &gmX, const GMem &gmY,
   size_t size = gmX.size();
   GMem gmZ(size, gmX.itemsize());
   Args args{gmX.data(), gmY.data(), gmZ.data(), size};
-  std::byte *args_begin = reinterpret_cast<std::byte *>(&args);
-  std::vector<std::byte> argBytes(args_begin, args_begin + sizeof(args));
+  char *args_begin = reinterpret_cast<char *>(&args);
+  std::vector<char> argBytes(args_begin, args_begin + sizeof(args));
 
   kernelLaunch("add", argBytes, kernelsDir / "add_kernel.o");
   return gmZ;
