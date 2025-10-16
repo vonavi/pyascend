@@ -17,9 +17,7 @@ PYBIND11_MODULE(_ascend, m) {
           throw py::type_error("Input must have dtype float16");
         if (info.ndim != 1)
           throw py::value_error("Input must be 1-D vector");
-
-        size_t nbytes = info.shape[0] * info.itemsize;
-        return new GMem(info.ptr, nbytes);
+        return new GMem(info.ptr, info.shape[0], info.itemsize);
       }))
       .def_buffer([](const GMem &gm) {
         char *data = new char[gm.nbytes()];
@@ -45,8 +43,9 @@ PYBIND11_MODULE(_ascend, m) {
         if (gmX.nbytes() != gmY.nbytes())
           throw py::value_error("Input vectors must have the same length");
 
-        size_t nbytes = gmX.nbytes();
-        GMem gmZ(nbytes);
+        size_t itemsize = py::dtype("float16").itemsize();
+        size_t size = gmX.nbytes() / itemsize;
+        GMem gmZ(size, itemsize);
 
         struct __attribute__((packed)) Args {
           void *inX __attribute__((aligned(8)));
@@ -54,7 +53,6 @@ PYBIND11_MODULE(_ascend, m) {
           void *outZ __attribute__((aligned(8)));
           size_t size __attribute__((aligned(4)));
         };
-        size_t size = nbytes / py::dtype("float16").itemsize();
         Args args{gmX.data(), gmY.data(), gmZ.data(), size};
         std::byte *args_begin = reinterpret_cast<std::byte *>(&args);
         std::vector<std::byte> argBytes(args_begin, args_begin + sizeof(args));

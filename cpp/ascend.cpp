@@ -42,11 +42,12 @@ void GMem::copyFrom(const void *data, size_t nbytes) {
 
 void GMem::copyTo(void *data) const {
   void *host = nullptr;
-  CHECK_ACL(aclrtMallocHost(&host, m_nbytes));
+  size_t nbytes = m_size * m_itemsize;
+  CHECK_ACL(aclrtMallocHost(&host, nbytes));
   CHECK_ACL(
-      aclrtMemcpy(host, m_nbytes, m_data, m_nbytes, ACL_MEMCPY_DEVICE_TO_HOST));
+      aclrtMemcpy(host, nbytes, m_data, nbytes, ACL_MEMCPY_DEVICE_TO_HOST));
 
-  std::memcpy(data, host, m_nbytes);
+  std::memcpy(data, host, nbytes);
   CHECK_ACL(aclrtFreeHost(host));
 }
 
