@@ -37,6 +37,7 @@ typedef int16_t float16_t;
 
 class GMem {
 public:
+  GMem(size_t nbytes) : m_nbytes(nbytes) { alloc(nbytes); }
   GMem(const void *data, size_t nbytes) : m_nbytes(nbytes) {
     copyFrom(data, nbytes);
   }
@@ -48,6 +49,7 @@ public:
   void *data() const { return m_data; }
   size_t nbytes() const { return m_nbytes; }
 
+  void alloc(size_t nbytes);
   void copyFrom(const void *data, size_t nbytes);
 
 private:
