@@ -5,8 +5,6 @@
 #include <string>
 #include <vector>
 
-#include "acl/acl_rt.h"
-
 // ---- Error checking helpers ----
 
 #define CHECK_ACL(x)                                                           \
@@ -33,17 +31,9 @@
 
 class GMem {
 public:
-  GMem(size_t size, size_t itemsize) : m_size(size), m_itemsize(itemsize) {
-    alloc(size * itemsize);
-  }
-  GMem(const void *data, size_t size, size_t itemsize)
-      : m_size(size), m_itemsize(itemsize) {
-    copyFrom(data, size * itemsize);
-  }
-  ~GMem() {
-    if (m_data)
-      aclrtFree(m_data);
-  }
+  GMem(size_t size, size_t itemsize);
+  GMem(const void *data, size_t size, size_t itemsize);
+  ~GMem();
 
   void *data() const { return m_data; }
   size_t size() const { return m_size; }
