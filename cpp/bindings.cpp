@@ -21,8 +21,9 @@ PYBIND11_MODULE(_ascend, m) {
       }))
       .def_buffer([](const GMem &gm) {
         std::string format(1, py::dtype("float16").char_());
-        char *data = new char[gm.size() * gm.itemsize()];
-        gm.copyTo(data);
+        size_t nbytes = gm.size() * gm.itemsize();
+        char *data = new char[nbytes];
+        gm.copyTo(data, nbytes);
 
         return py::buffer_info(
             data,           /* Pointer to buffer */
