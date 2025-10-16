@@ -1,7 +1,9 @@
 #ifndef ASCEND_HPP
 #define ASCEND_HPP
 
+#include <cstddef> // std::byte
 #include <string>
+#include <vector>
 
 #include "acl/acl_rt.h"
 
@@ -60,7 +62,7 @@ private:
 
 void ascendInitialize();
 
-void kernelLaunch(const std::string &kernel, const GMem &gmX, const GMem &gmY,
-                  const GMem &gmZ, const std::string &objPath);
+void kernelLaunch(const std::string &kernel, std::vector<std::byte> &argBytes,
+                  const std::string &objPath);
 
 #endif // ASCEND_HPP

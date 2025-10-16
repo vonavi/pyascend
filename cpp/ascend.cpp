@@ -58,8 +58,8 @@ void ascendInitialize() {
   CHECK_ACL(aclrtSetDevice(deviceId));
 }
 
-void kernelLaunch(const std::string &kernel, const GMem &gmX, const GMem &gmY,
-                  const GMem &gmZ, const std::string &objPath) {
+void kernelLaunch(const std::string &kernel, std::vector<std::byte> &argBytes,
+                  const std::string &objPath) {
   char *binData = new char[MAX_BIN_LENGTH];
   size_t binLen;
   readFile(objPath, binData, binLen);
@@ -75,16 +75,8 @@ void kernelLaunch(const std::string &kernel, const GMem &gmX, const GMem &gmY,
 
   rtStream_t stream;
   CHECK_RT(rtStreamCreate(&stream, 0));
-
-  size_t dataSize = gmZ.nbytes() / sizeof(float16_t);
-  struct Args {
-    void *inX;
-    void *inY;
-    void *outZ;
-    size_t size;
-  } args{gmX.data(), gmY.data(), gmZ.data(), dataSize};
-  CHECK_RT(rtKernelLaunch(kernel.c_str(), /*blockDim=*/1, &args, sizeof(args),
-                          nullptr, stream));
+  CHECK_RT(rtKernelLaunch(kernel.c_str(), /*blockDim=*/1, argBytes.data(),
+                          argBytes.size(), nullptr, stream));
   CHECK_RT(rtStreamSynchronize(stream));
 
   CHECK_RT(rtStreamDestroy(stream));
